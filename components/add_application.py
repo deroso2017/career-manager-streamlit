@@ -1,7 +1,7 @@
-import streamlit as st
 import time
 import datetime
 import json
+import streamlit as st
 from dataclasses import asdict
 from pathlib import Path
 from models.application_model import Application

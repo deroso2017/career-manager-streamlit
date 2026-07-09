@@ -3,6 +3,10 @@ import io
 import streamlit as st
 from pathlib import Path
 from components.pdf_preview import show_pdf_preview
+from components.uploader import upload_pdfs
+from auth import require_login
+
+require_login()
 
 st.set_page_config(page_title="Über mich", page_icon=":material/contact_page:")
 st.title("Über mich")
@@ -59,3 +63,15 @@ if pdf_path.exists():
     show_pdf_preview(uploaded_file, pages=3, show_button= False, show_page_label= False) 
 else:
     st.warning("PDF file not found!")
+    upload_pdfs(label="Lebenslauf hochladen", isCV=True)
+    st.rerun()
+
+st.sidebar.write("""
+Diese Seite präsentiert meine **persönlichen Informationen** und meinen **Lebenslauf**.  
+                 
+*Funktionen:*
+- 📄 *Lebenslauf-Vorschau:* 
+  Eine integrierte PDF-Vorschau zeigt meinen Lebenslauf direkt auf der Seite.
+- ⬆️ *Lebenslauf hochladen:*
+  Falls noch kein PDF vorhanden ist, kann ich meinen aktuellen Lebenslauf direkt hochladen.
+""")

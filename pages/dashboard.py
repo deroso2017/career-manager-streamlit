@@ -5,8 +5,12 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from pathlib import Path
+from auth import require_login
 
-# Path to your JSON file
+require_login()
+
+from components.job_carousel import job_carousel
+
 DATA_FILE = Path("files/applications.json")
 
 # Load JSON data
@@ -19,10 +23,10 @@ else:
 
 st.set_page_config(page_title="Dashboard", page_icon=":material/dashboard:")
 st.title("Dashboard")
+
 st.markdown(
     """
     <h3>Wo ich mich aktuell bewerbe:</h3>
-
     <ul>
         <li><a href="https://www.linkedin.com" style="color:#33E6B3;" target="_blank">LinkedIn</a></li>
         <li><a href="https://web.arbeitsagentur.de/" style="color:#33E6B3;" target="_blank">Arbeitsagentur</a></li>
@@ -76,7 +80,21 @@ if applications_list:
     chart = alt.Chart(df_plot).mark_bar().encode(
         x=alt.X("Monat", sort=month_order),
         y="Bewerbungen",
-        color=alt.Color("color", scale=None)
+        color=alt.Color("color", scale=None),
+        tooltip=["Monat", "Bewerbungen"]
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+    st.sidebar.write("""
+        Diese Seite bietet einen Überblick über meine laufenden und vergangenen Bewerbungen.
+                     
+        **Funktionen:**
+        - 📅 *Bewerbungen nach Jahr*   
+        - 📈 *Monatliche Auswertung* 
+        
+        Schnellzugriff auf häufig genutzte Plattformen wie LinkedIn, StepStone, Join und die Arbeitsagentur.
+        """)
+
+
+

@@ -166,5 +166,19 @@
         "status": "Übermittelt",
         "platform": "Join",
         "link": "files\\GGM Gastro International GmbH.pdf"
+    },
+    {
+        "company": "BS Gottschall",
+        "date": "2025-11-05",
+        "status": "Abgesagt",
+        "platform": "Arbeitsagentur",
+        "link": "files\\Yahoo Mail - Willkommen bei BS Gottschall.pdf"
+    },
+    {
+        "company": "test",
+        "date": "2026-01-01",
+        "status": "Übermittelt",
+        "platform": "Arbeitsagentur",
+        "link": "files\\Yahoo Mail - BS Gottschall _ Ihre Bewerbung vom 05.11.2025.pdf"
     }
 ]

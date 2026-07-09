@@ -4,13 +4,19 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 from components.add_application import show_application_form
+from auth import require_login
+
+require_login()
+
+DATA_FILE = Path("files/applications.json")
 
 st.set_page_config(page_title="Bewerbungen", page_icon=":material/show_chart:")
-col1, buff, col2 = st.columns([.4, .4, .2])
+
+col1, buff, col2 = st.columns([.4, .3, .13])
 with col1:
     st.title("Bewerbungen")
 with col2:
-    @st.dialog("📂 Job Applications App")
+    @st.dialog("📂 Bewerbung")
     def add():
         show_application_form()
         
@@ -19,7 +25,6 @@ with col2:
     if st.button("Hochladen"):
         add()
         
-DATA_FILE = Path("files/applications.json")
 # --- Load data safely ---
 if not DATA_FILE.exists():
     st.error("❌ Datei 'applications.json' wurde nicht gefunden.")
@@ -69,7 +74,7 @@ monthly_counts = (
     df_year.groupby("month_num").size()
     .reindex(range(1, 13), fill_value=0)   # alle Monate in korrekter Reihenfolge
 )
-# optional: nur Monate mit >0 Anzeigen (falls gewünscht)
+# nur Monate mit >0 Anzeigen (falls gewünscht)
 monthly_counts_nonzero = monthly_counts[monthly_counts > 0]
 
 # Map month numbers back to German names for the chart labels
@@ -150,6 +155,20 @@ td {{
 # Display in expander
 downloads_expander = st.expander("Herunterladen")
 downloads_expander.markdown(full_width_html, unsafe_allow_html=True)
+
+st.sidebar.write(""" 
+Diese Seite zeigt eine detaillierte Übersicht aller erfassten Bewerbungen.  
+Hier kann ich **neue Bewerbungen hochladen**, vorhandene Einträge durchsuchen und monatliche Aktivitäten analysieren.
+
+**Funktionen:**
+- 📂 *Bewerbung hinzufügen:*  
+  Über den Button *„Hochladen“* kann ich neue Bewerbungen direkt eintragen.
+- 📅 *Jahresauswahl:* 
+  Wähle ein Jahr aus, um nur Bewerbungen dieses Jahres anzuzeigen.
+- 📊 *Monatliche Statistik* 
+- 📥 *Downloads:* 
+  Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
+""")
 
 
 

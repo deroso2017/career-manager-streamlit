@@ -4,8 +4,7 @@ import os
 # Folder where files will be saved
 UPLOAD_FOLDER = "files"
 
-
-def upload_pdfs() -> None:
+def upload_pdfs(label = "📄 Bewerbungen hochladen", isCV=False) -> None:
     """Handles uploading and saving PDF files to the 'files' folder."""
 
     # Ensure the folder exists
@@ -13,7 +12,7 @@ def upload_pdfs() -> None:
 
     # File uploader widget
     uploaded_files = st.file_uploader(
-        "📄 Bewerbungen hochladen", 
+        label,
         type=['pdf'], 
         accept_multiple_files=True
     )
@@ -21,12 +20,17 @@ def upload_pdfs() -> None:
     # If user uploads files
     if uploaded_files:
         for uploaded_file in uploaded_files:
-            save_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
+            if isCV:
+                # Save file as "lebenslauf.pdf"
+                save_path = os.path.join(UPLOAD_FOLDER, "lebenslauf.pdf")
+            else:
+                # Save with original filename
+                save_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
 
             # Save the file
             with open(save_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
-            st.success(f"✅ '{uploaded_file.name}' wurde gespeichert!")
+            st.success(f"✅ '{os.path.basename(save_path)}' wurde gespeichert!")
 
         st.info(f"Alle Dateien wurden erfolgreich in '{UPLOAD_FOLDER}' gespeichert.")
