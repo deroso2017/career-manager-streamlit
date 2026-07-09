@@ -1,6 +1,5 @@
 import json
 import calendar
-import locale
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -41,7 +40,6 @@ st.markdown(
 st.subheader("📊 Bewerbungen nach Jahr")
 
 if applications_list:
-    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
     # Convert to DataFrame
     df_apps = pd.DataFrame(applications_list)
     df_apps['date'] = pd.to_datetime(df_apps['date'])
