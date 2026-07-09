@@ -66,7 +66,7 @@ def login():
         st.title("🔒 Bitte geben Sie das Passwort ein, um fortzufahren.")
         password_input = st.text_input("Passwort", type="password", key="pw_input")
 
-        if st.button("Login"):
+        if st.button("App starten", use_container_width=True):
             if password_input == PASSWORD:
                 st.session_state.logged_in = True
                 st.success("✅ Passwort korrekt! Willkommen!")
