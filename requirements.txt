@@ -6,4 +6,5 @@ PyMuPDF==1.26.5
 python-dotenv==1.2.2
 requests==2.32.5
 setuptools>=70
+boto3==1.40.58
 wheel
