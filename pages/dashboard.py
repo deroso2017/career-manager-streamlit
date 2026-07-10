@@ -3,22 +3,14 @@ import calendar
 import streamlit as st
 import pandas as pd
 import altair as alt
-from pathlib import Path
 from auth import require_login
+from storage import load_json
 
 require_login()
 
 from components.job_carousel import job_carousel
 
-DATA_FILE = Path("files/applications.json")
-
-# Load JSON data
-if DATA_FILE.exists():
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        applications_list = json.load(f)
-else:
-    st.error("JSON file not found!")
-    applications_list = []
+applications_list = load_json("applications/applications.json")
 
 st.set_page_config(page_title="Dashboard", page_icon=":material/dashboard:")
 st.title("Dashboard")

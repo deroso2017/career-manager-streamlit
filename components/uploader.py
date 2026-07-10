@@ -1,36 +1,13 @@
 import streamlit as st
-import os
+from storage import upload_file
 
-# Folder where files will be saved
-UPLOAD_FOLDER = "files"
+def upload_pdfs(label="📄 Bewerbungen hochladen", isCV=False) -> None:
 
-def upload_pdfs(label = "📄 Bewerbungen hochladen", isCV=False) -> None:
-    """Handles uploading and saving PDF files to the 'files' folder."""
+    uploaded_files = st.file_uploader(label, type=["pdf"], accept_multiple_files=True)
 
-    # Ensure the folder exists
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-    # File uploader widget
-    uploaded_files = st.file_uploader(
-        label,
-        type=['pdf'], 
-        accept_multiple_files=True
-    )
-
-    # If user uploads files
     if uploaded_files:
         for uploaded_file in uploaded_files:
-            if isCV:
-                # Save file as "lebenslauf.pdf"
-                save_path = os.path.join(UPLOAD_FOLDER, "lebenslauf.pdf")
-            else:
-                # Save with original filename
-                save_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
+            key = "files/lebenslauf.pdf" if isCV else f"files/{uploaded_file.name}"
+            upload_file(uploaded_file.getvalue(), key)
+            st.success(f"✅ '{key.split('/')[-1]}' wurde gespeichert!")
 
-            # Save the file
-            with open(save_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-
-            st.success(f"✅ '{os.path.basename(save_path)}' wurde gespeichert!")
-
-        st.info(f"Alle Dateien wurden erfolgreich in '{UPLOAD_FOLDER}' gespeichert.")

@@ -1,15 +1,11 @@
 import time
 import datetime
-import json
 import streamlit as st
 from dataclasses import asdict
-from pathlib import Path
 from models.activity_model import Activity
+from storage import load_json, save_json
 
-# ---------- Configuration ----------
-UPLOAD_FOLDER = Path("files")
-UPLOAD_FOLDER.mkdir(exist_ok=True)
-JSON_FILE = UPLOAD_FOLDER / "activity.json"
+ACTIVITIES_FILE = "activities/activity.json"
 
 
 # ---------- Form Renderer ----------
@@ -58,13 +54,7 @@ def show_activity_form():
             end_date=end_date.isoformat() if end_date else None,
         )
 
-        data = []
-        if JSON_FILE.exists():
-            with open(JSON_FILE, "r", encoding="utf-8") as f:
-                try:
-                    data = json.load(f)
-                except json.JSONDecodeError:
-                    data = []
+        data = load_json(ACTIVITIES_FILE)
 
         updated = False
         for i, existing in enumerate(data):
@@ -76,8 +66,7 @@ def show_activity_form():
         if not updated:
             data.append(asdict(activity_entry))
 
-        with open(JSON_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        save_json(ACTIVITIES_FILE, data)
 
         st.success(f"Neue Aktivität als **{title}** wurde gespeichert!")
         time.sleep(1)

@@ -1,21 +1,9 @@
-import json
 import streamlit as st
-from pathlib import Path
 from auth import require_login
 
 require_login()
 
 from components.job_carousel import job_carousel
-
-DATA_FILE = Path("files/applications.json")
-
-# Load JSON data
-if DATA_FILE.exists():
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        applications_list = json.load(f)
-else:
-    st.error("JSON file not found!")
-    applications_list = []
 
 st.set_page_config(page_title="Jobbörse", page_icon=":material/dashboard:")
 st.title("Jobbörse")
@@ -23,13 +11,18 @@ st.title("Jobbörse")
 # Main keyword (job title)
 keyword = st.selectbox(
     "Berufsbezeichnung / Stichwort",
-    ["Webentwickler", "Frontend Entwickler", "Anwendungsentwickler", "Software Engineer", "Fullstack Entwickler"]
+    [
+        "Webentwickler",
+        "Frontend Entwickler",
+        "Anwendungsentwickler",
+        "Software Engineer",
+        "Fullstack Entwickler",
+    ],
 )
 
 # selectbox for technology stack
 tech = st.selectbox(
-    "Technologie (optional)",
-    ["", "React", "Angular", "Python", "TypeScript"]
+    "Technologie (optional)", ["", "React", "Angular", "Python", "TypeScript"]
 )
 
 location = st.text_input("Ort / Region", "Deutschland")
@@ -56,7 +49,6 @@ Sie dient als persönliche **Jobbörse**, die auf meine Interessen und mein Tech
 """)
 
 
-
 # url = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
 # headers = {"X-API-Key": "jobboerse-jobsuche"}
 # params = {"was": "Webentwickler", "size": 5}
@@ -64,4 +56,3 @@ Sie dient als persönliche **Jobbörse**, die auf meine Interessen und mein Tech
 # print(r.status_code)
 # # print(r.json())
 # st.write(r.json())
-
