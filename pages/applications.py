@@ -1,14 +1,11 @@
 import base64
-import json
 import streamlit as st
 import pandas as pd
-from pathlib import Path
 from components.add_application import show_application_form
 from auth import require_login
+from storage import load_json, download_file
 
 require_login()
-
-DATA_FILE = Path("files/applications.json")
 
 st.set_page_config(page_title="Bewerbungen", page_icon=":material/show_chart:")
 
@@ -27,19 +24,8 @@ with col2:
         add()
 
 # --- Load data safely ---
-if not DATA_FILE.exists():
-    st.error("❌ Datei 'applications.json' wurde nicht gefunden.")
-    st.stop()
-
-try:
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        applications = json.load(f)
-except json.JSONDecodeError:
-    st.error("⚠️ Fehler beim Lesen der JSON-Datei. Bitte prüfen Sie die Formatierung.")
-    st.stop()
-
-# --- Ensure correct structure ---
-if not isinstance(applications, list) or len(applications) == 0:
+applications = load_json("applications/applications.json")
+if not applications:
     st.warning("⚠️ Keine Bewerbungsdaten gefunden.")
     st.stop()
 
@@ -152,14 +138,13 @@ st.divider()
 def make_download_link(file_path):
     if pd.isna(file_path) or not file_path:
         return "❌"
-    file_path = Path(file_path)
-    if not file_path.exists():
+    try:
+        file_bytes = download_file(file_path)
+        b64 = base64.b64encode(file_bytes).decode()
+        filename = file_path.split("/")[-1]
+        return f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">📥</a>'
+    except Exception:
         return "❌"
-    with open(file_path, "rb") as f:
-        file_bytes = f.read()
-    b64 = base64.b64encode(file_bytes).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{file_path.name}">📥</a>'
-    return href
 
 
 df_year["Download"] = df_year["link"].apply(make_download_link)

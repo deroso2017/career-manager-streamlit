@@ -1,14 +1,9 @@
-import json
 import streamlit as st
-from pathlib import Path
 from components.add_activity import show_activity_form
 from auth import require_login
+from storage import load_json
 
 require_login()
-
-# ---------- Configuration ----------
-UPLOAD_FOLDER = Path("files")
-JSON_FILE = UPLOAD_FOLDER / "activity.json"
 
 st.set_page_config(page_title="Aktivitäten", page_icon=":material/waving_hand:")
 
@@ -25,20 +20,11 @@ with col2:
     if st.button("**+**"):
         add()
 
-# Load activities from JSON
-if not JSON_FILE.exists():
+activities = load_json("activities/activity.json")
+
+if not activities:
     st.info("Noch keine Aktivitäten gespeichert.")
 else:
-    with open(JSON_FILE, "r", encoding="utf-8") as f:
-        try:
-            activities = json.load(f)
-        except json.JSONDecodeError:
-            st.error("Fehler beim Lesen der Datei.")
-            activities = []
-
-    if not activities:
-        st.info("Noch keine Aktivitäten gespeichert.")
-    else:
         # Loop through and display each activity
         for activity in activities:
             title = activity.get("title", "Ohne Titel")
