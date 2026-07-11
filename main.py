@@ -9,6 +9,7 @@ load_dotenv()
 dir_path = Path(__file__).parent
 PROFILE_IMAGE = dir_path / "files" / "profile.jpg"
 LOGIN_BACKGROUND = dir_path / "files" / "login_background.png"
+LOGO_IMAGE = dir_path / "files" / "logo.png"
 
 PASSWORD = os.getenv("PASSWORD")
 
@@ -133,6 +134,30 @@ def run() -> None:
     if not login():
         hide_sidebar()
         return
+
+    # --- Force Logo ABOVE the Navigation Menu ---
+    if LOGO_IMAGE.exists():
+        st.logo(str(LOGO_IMAGE))
+        st.markdown(
+            """
+            <style>
+                /* Add the margin below the entire header container */
+                div[data-testid="stSidebarHeader"] {
+                    padding-top: 0px !important;
+                    padding-bottom: 0px !important;
+                    margin-bottom: 4rem !important;
+                }
+
+                /* Apply your custom logo dimensions and top margin */
+                .stLogo {
+                  height: 90px !important; 
+                  width: auto !important; 
+                  margin-top: 44px !important; 
+                  }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Navigation pages
     page = st.navigation(
