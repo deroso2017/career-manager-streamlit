@@ -5,6 +5,7 @@ import urllib.parse
 API_URL = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
 API_KEY = "jobboerse-jobsuche"
 
+
 @st.cache_data(ttl=600)
 def fetch_jobs(keyword: str, location: str = "Deutschland", size: int = 15):
     """Fetch job offers from Bundesagentur für Arbeit API."""
@@ -27,20 +28,25 @@ def fetch_jobs(keyword: str, location: str = "Deutschland", size: int = 15):
             # Extract location
             location_raw = o.get("arbeitsort")
             if isinstance(location_raw, dict):
-                location_name = location_raw.get("ort") or location_raw.get("region") or location_raw.get("land")
+                location_name = (
+                    location_raw.get("ort")
+                    or location_raw.get("region")
+                    or location_raw.get("land")
+                )
             else:
                 location_name = location_raw
 
             # Append simplified job dict
-            jobs.append({
-                "title": o.get("titel", "—"),
-                "company": o.get("arbeitgeber"),
-                "location": location_name or "—",
-                "reference_nr": o.get("refnr") or "#",
-                "entry_date": o.get("eintrittsdatum") or "#",
-                "public_date": o.get("aktuelleVeroeffentlichungsdatum") or "#"
-
-            })
+            jobs.append(
+                {
+                    "title": o.get("titel", "—"),
+                    "company": o.get("arbeitgeber"),
+                    "location": location_name or "—",
+                    "reference_nr": o.get("refnr") or "#",
+                    "entry_date": o.get("eintrittsdatum") or "#",
+                    "public_date": o.get("aktuelleVeroeffentlichungsdatum") or "#",
+                }
+            )
         return jobs
 
     except Exception as e:
@@ -48,7 +54,9 @@ def fetch_jobs(keyword: str, location: str = "Deutschland", size: int = 15):
         return []
 
 
-def job_carousel(keyword: str = "Webentwickler", location: str = "Deutschland", size: int = 30):
+def job_carousel(
+    keyword: str = "Webentwickler", location: str = "Deutschland", size: int = 30
+):
     """Display job cards in groups of 3 with navigation buttons and equal height."""
     st.subheader(f"💼 Aktuelle Jobs: {keyword} in {location}")
 
@@ -63,7 +71,8 @@ def job_carousel(keyword: str = "Webentwickler", location: str = "Deutschland", 
     if "carousel_index" not in st.session_state:
         st.session_state.carousel_index = 0
 
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         .job-container {
                 width: 100% !important; 
@@ -118,7 +127,9 @@ def job_carousel(keyword: str = "Webentwickler", location: str = "Deutschland", 
             line-height: 1.4;
         }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # 3 Jobs pro Seite
     start = st.session_state.carousel_index
@@ -171,15 +182,17 @@ def job_carousel(keyword: str = "Webentwickler", location: str = "Deutschland", 
                     </a>
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
     # Navigationsbuttons (zentriert)
     st.markdown("<br>", unsafe_allow_html=True)
-    button_cols = st.columns([1.2, 3, 1])
+    button_cols = st.columns([1.2, 3, 1.2])
     with button_cols[0]:
         if st.button("‹ Vorherige Seite"):
-            st.session_state.carousel_index = max(0, st.session_state.carousel_index - 3)
+            st.session_state.carousel_index = max(
+                0, st.session_state.carousel_index - 3
+            )
             st.rerun()
     with button_cols[2]:
         if st.button("Nächste Seite ›"):

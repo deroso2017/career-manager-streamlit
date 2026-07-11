@@ -26,7 +26,7 @@ st.markdown(
         <li><a href="https://www.instaffo.com/en/talent" style="color:#33E6B3;" target="_blank">Instaffo</a></li>
     </ul>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 st.subheader("📊 Bewerbungen nach Jahr")
@@ -34,15 +34,18 @@ st.subheader("📊 Bewerbungen nach Jahr")
 if applications_list:
     # Convert to DataFrame
     df_apps = pd.DataFrame(applications_list)
-    df_apps['date'] = pd.to_datetime(df_apps['date'])
-    df_apps['year'] = df_apps['date'].dt.year.astype(str)
-    df_apps['month'] = df_apps['date'].dt.strftime('%B')  # Full month name
+    df_apps["date"] = pd.to_datetime(df_apps["date"])
+    df_apps["year"] = df_apps["date"].dt.year.astype(str)
+    df_apps["month"] = df_apps["date"].dt.strftime("%B")  # Full month name
 
     # Aggregate counts per year and month
-    applications = df_apps.groupby(['year', 'month']).size().unstack(fill_value=0).to_dict('index')
+    applications = (
+        df_apps.groupby(["year", "month"]).size().unstack(fill_value=0).to_dict("index")
+    )
 
     # Select year
-    selected_year = st.selectbox("Jahr", list(applications.keys()))
+    available_years = sorted(list(applications.keys()), reverse=True)
+    selected_year = st.selectbox("Jahr", available_years)
     data = applications[selected_year]
 
     df_plot = pd.DataFrame(list(data.items()), columns=["Monat", "Bewerbungen"])
@@ -59,19 +62,26 @@ if applications_list:
             colors.append(base_colors[i % len(base_colors)])
 
     df_plot["color"] = colors
-    
 
     # Define month order
-    month_order = list(calendar.month_name)[1:]  # ['January', 'February', ..., 'December']
+    month_order = list(calendar.month_name)[
+        1:
+    ]  # ['January', 'February', ..., 'December']
     # Convert 'Monat' to categorical with proper order
-    df_plot['Monat'] = pd.Categorical(df_plot['Monat'], categories=month_order, ordered=True)
+    df_plot["Monat"] = pd.Categorical(
+        df_plot["Monat"], categories=month_order, ordered=True
+    )
 
     # Now when we plot, months will appear chronologically
-    chart = alt.Chart(df_plot).mark_bar().encode(
-        x=alt.X("Monat", sort=month_order),
-        y="Bewerbungen",
-        color=alt.Color("color", scale=None),
-        tooltip=["Monat", "Bewerbungen"]
+    chart = (
+        alt.Chart(df_plot)
+        .mark_bar()
+        .encode(
+            x=alt.X("Monat", sort=month_order),
+            y="Bewerbungen",
+            color=alt.Color("color", scale=None),
+            tooltip=["Monat", "Bewerbungen"],
+        )
     )
 
     st.altair_chart(chart, use_container_width=True)
@@ -85,6 +95,3 @@ if applications_list:
         
         Schnellzugriff auf häufig genutzte Plattformen wie LinkedIn, StepStone, Join und die Arbeitsagentur.
         """)
-
-
-

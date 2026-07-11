@@ -9,7 +9,7 @@ require_login()
 
 st.set_page_config(page_title="Bewerbungen", page_icon=":material/show_chart:")
 
-col1, buff, col2 = st.columns([0.4, 0.3, 0.13])
+col1, buff, col2 = st.columns([0.4, 0.3, 0.14])
 with col1:
     st.title("Bewerbungen")
 with col2:
@@ -62,7 +62,7 @@ df["month"] = df["date"].dt.month.apply(
 )
 
 # --- Select year ---
-years = sorted(df["year"].dropna().unique())
+years = sorted(df["year"].dropna().unique(), reverse=True)
 selected_year = st.selectbox("Jahr", years)
 
 # --- Filter and Sort (Chronological: Newest to Oldest) ---
