@@ -63,7 +63,6 @@ def login():
 
     # --- Show login form if not yet logged in ---
     if not st.session_state.logged_in:
-        set_login_background()
         st.title("🔒 Bitte geben Sie das Passwort ein, um fortzufahren.")
         password_input = st.text_input("Passwort", type="password", key="pw_input")
 
@@ -92,7 +91,7 @@ def login():
         return True
 
 
-def set_login_background():
+def set_background():
     """
     Set a background image for the login screen.
     """
@@ -129,6 +128,8 @@ def set_login_background():
 
 def run() -> None:
     """Main function to set up and run the Streamlit app with navigation."""
+
+    set_background()
 
     # Check login first
     if not login():
