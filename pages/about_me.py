@@ -68,4 +68,3 @@ if file_exists("files/lebenslauf.pdf"):
 else:
     st.warning("PDF file not found!")
     upload_pdfs(label="Lebenslauf hochladen", isCV=True)
-    st.rerun()

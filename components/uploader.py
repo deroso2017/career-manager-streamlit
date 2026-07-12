@@ -1,6 +1,7 @@
 import streamlit as st
 from storage import upload_file
 
+
 def upload_pdfs(label="📄 Bewerbungen hochladen", isCV=False) -> None:
 
     uploaded_files = st.file_uploader(label, type=["pdf"], accept_multiple_files=True)
@@ -10,4 +11,4 @@ def upload_pdfs(label="📄 Bewerbungen hochladen", isCV=False) -> None:
             key = "files/lebenslauf.pdf" if isCV else f"files/{uploaded_file.name}"
             upload_file(uploaded_file.getvalue(), key)
             st.success(f"✅ '{key.split('/')[-1]}' wurde gespeichert!")
-
+            st.rerun()
