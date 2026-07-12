@@ -9,6 +9,20 @@ require_login()
 
 st.set_page_config(page_title="Bewerbungen", page_icon=":material/show_chart:")
 
+st.sidebar.write(""" 
+Diese Seite zeigt eine detaillierte Übersicht aller erfassten Bewerbungen.  
+Hier kann ich **neue Bewerbungen hochladen**, vorhandene Einträge durchsuchen und monatliche Aktivitäten analysieren.
+
+**Funktionen:**
+- 📂 *Bewerbung hinzufügen:*  
+  Über den Button *„Hochladen“* kann ich neue Bewerbungen direkt eintragen.
+- 📅 *Jahresauswahl:* 
+  Wähle ein Jahr aus, um nur Bewerbungen dieses Jahres anzuzeigen.
+- 📊 *Monatliche Statistik* 
+- 📥 *Downloads:* 
+  Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
+""")
+
 col1, buff, col2 = st.columns([0.4, 0.3, 0.14])
 with col1:
     st.title("Bewerbungen")
@@ -174,17 +188,3 @@ td {{
 # Display in expander
 downloads_expander = st.expander("Herunterladen")
 downloads_expander.markdown(full_width_html, unsafe_allow_html=True)
-
-st.sidebar.write(""" 
-Diese Seite zeigt eine detaillierte Übersicht aller erfassten Bewerbungen.  
-Hier kann ich **neue Bewerbungen hochladen**, vorhandene Einträge durchsuchen und monatliche Aktivitäten analysieren.
-
-**Funktionen:**
-- 📂 *Bewerbung hinzufügen:*  
-  Über den Button *„Hochladen“* kann ich neue Bewerbungen direkt eintragen.
-- 📅 *Jahresauswahl:* 
-  Wähle ein Jahr aus, um nur Bewerbungen dieses Jahres anzuzeigen.
-- 📊 *Monatliche Statistik* 
-- 📥 *Downloads:* 
-  Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
-""")

@@ -49,6 +49,16 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
+    st.sidebar.write("""
+Diese Seite präsentiert meine **persönlichen Informationen** und meinen **Lebenslauf**.  
+                 
+*Funktionen:*
+- 📄 *Lebenslauf-Vorschau:* 
+  Eine integrierte PDF-Vorschau zeigt meinen Lebenslauf direkt auf der Seite.
+- ⬆️ *Lebenslauf hochladen:*
+  Falls noch kein PDF vorhanden ist, kann ich meinen aktuellen Lebenslauf direkt hochladen.
+""")
+
 if file_exists("files/lebenslauf.pdf"):
     with st.spinner("Lade Daten..."):
         pdf_bytes = download_file("files/lebenslauf.pdf")
@@ -59,13 +69,3 @@ else:
     st.warning("PDF file not found!")
     upload_pdfs(label="Lebenslauf hochladen", isCV=True)
     st.rerun()
-
-st.sidebar.write("""
-Diese Seite präsentiert meine **persönlichen Informationen** und meinen **Lebenslauf**.  
-                 
-*Funktionen:*
-- 📄 *Lebenslauf-Vorschau:* 
-  Eine integrierte PDF-Vorschau zeigt meinen Lebenslauf direkt auf der Seite.
-- ⬆️ *Lebenslauf hochladen:*
-  Falls noch kein PDF vorhanden ist, kann ich meinen aktuellen Lebenslauf direkt hochladen.
-""")

@@ -15,6 +15,16 @@ applications_list = load_json("applications/applications.json")
 st.set_page_config(page_title="Dashboard", page_icon=":material/dashboard:")
 st.title("Dashboard")
 
+st.sidebar.write("""
+        Diese Seite bietet einen Überblick über meine laufenden und vergangenen Bewerbungen.
+                     
+        **Funktionen:**
+        - 📅 *Bewerbungen nach Jahr*   
+        - 📈 *Monatliche Auswertung* 
+        
+        Schnellzugriff auf häufig genutzte Plattformen wie LinkedIn, StepStone, Join und die Arbeitsagentur.
+        """)
+
 st.markdown(
     """
     <h3>Wo ich mich aktuell bewerbe:</h3>
@@ -85,13 +95,3 @@ if applications_list:
     )
 
     st.altair_chart(chart, use_container_width=True)
-
-    st.sidebar.write("""
-        Diese Seite bietet einen Überblick über meine laufenden und vergangenen Bewerbungen.
-                     
-        **Funktionen:**
-        - 📅 *Bewerbungen nach Jahr*   
-        - 📈 *Monatliche Auswertung* 
-        
-        Schnellzugriff auf häufig genutzte Plattformen wie LinkedIn, StepStone, Join und die Arbeitsagentur.
-        """)
