@@ -103,7 +103,7 @@ def job_carousel(
             box-shadow: 0 10px 18px rgba(0,0,0,0.45);
         }
         .job-title {
-            color: #33E6B3 !important;
+            color: #14B8A6 !important;
             font-weight: 700;
             font-size: 1.1rem;
             margin-bottom: 0.3rem;
