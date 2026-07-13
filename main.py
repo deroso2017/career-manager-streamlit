@@ -193,6 +193,10 @@ def run() -> None:
         }
     )
 
+    # Clear apps page flag when navigating away so download state resets on next visit
+    if page.url_path != "applications":
+        st.session_state.pop("_on_apps_page", None)
+
     page.run()
 
 
