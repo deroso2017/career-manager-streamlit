@@ -1,4 +1,3 @@
-import base64
 import streamlit as st
 import pandas as pd
 from components.add_application import show_application_form
@@ -6,6 +5,13 @@ from auth import require_login
 from storage import load_json, download_file
 
 require_login()
+
+# Reset download states on fresh page navigation
+if not st.session_state.get("_on_apps_page"):
+    for key in list(st.session_state.keys()):
+        if key.startswith("ready_") or key.startswith("file_"):
+            del st.session_state[key]
+st.session_state["_on_apps_page"] = True
 
 st.set_page_config(page_title="Bewerbungen", page_icon=":material/show_chart:")
 
@@ -144,74 +150,74 @@ st.bar_chart(data=chart_data, x="Monat", y="Bewerbungen", color="Monat")
 st.divider()
 
 
-# --- Downloads Area (HTML Table + Pure On-Demand Fetching) ---
+# --- Downloads Area (Modernized UI) ---
+downloads_expander = st.expander("📥 Dokumente Herunterladen")
 
-# 1. Catch if the user just clicked one of your HTML links
-query_params = st.query_params
-if "download_idx" in query_params:
-    target_idx = int(query_params["download_idx"])
+with downloads_expander:
+    # Filter out empty paths
+    df_downloads = df_year[df_year["link"].notna() & (df_year["link"] != "")].copy()
 
-    # Locate the single requested file row safely
-    matched_row = df[df.index == target_idx]
-    if not matched_row.empty:
-        file_path = matched_row["link"].values[0]
-        filename = file_path.split("/")[-1]
+    if df_downloads.empty:
+        st.info("Keine Dokumente für dieses Jahr verfügbar.")
+    else:
+        # Subtle, modern header context (optional, since card layouts are self-explanatory)
+        st.markdown(
+            "<small style='color: gray;'>Verfügbare Dokumente für den Download:</small>",
+            unsafe_allow_html=True,
+        )
 
-        with st.spinner("Datei wird abgerufen..."):
-            try:
-                # ONLY downloads the file from B2 at this specific moment!
-                file_bytes = download_file(file_path)
-                b64 = base64.b64encode(file_bytes).decode()
+        for idx, row in df_downloads.iterrows():
+            # Container with borders creates a clean card UI for each document row
+            with st.container(border=True):
+                # Native vertical alignment keeps elements perfectly centered
+                col_date, col_company, col_btn = st.columns(
+                    [0.2, 0.5, 0.3], vertical_alignment="center"
+                )
 
-                # Automatically trigger the browser download payload and wipe the URL clean
-                st.html(f"""
-                    <a id="auto_dl" href="data:application/octet-stream;base64,{b64}" download="{filename}" style="display:none;"></a>
-                    <script>
-                        document.getElementById('auto_dl').click();
-                        window.history.replaceState({{}}, '', window.location.pathname);
-                    </script>
-                """)
-                st.query_params.clear()
-                st.rerun()
-            except Exception:
-                st.error("Fehler beim Herunterladen der Datei.")
+                with col_date:
+                    # Sleek, muted date token appearance
+                    st.caption(f"🗓️ {row['date'].strftime('%d.%m.%Y')}")
 
+                with col_company:
+                    # Clean bold typography
+                    st.markdown(f"**{row['company']}**")
 
-# 2. Render your exact original full-width table layout
-def make_dynamic_download_link(row_idx, file_path):
-    if pd.isna(file_path) or not file_path:
-        return "❌"
-    # The link reloads the page with a targeted target parameter, preventing global loading lag
-    return f'<a href="?download_idx={row_idx}" target="_self">📥</a>'
+                with col_btn:
+                    file_path = row["link"]
+                    filename = file_path.split("/")[-1]
 
+                    btn_key = f"btn_{idx}"
+                    dl_key = f"dl_{idx}"
+                    file_key = f"file_{idx}"
+                    is_ready = st.session_state.get(f"ready_{idx}", False)
 
-# Apply the dynamic indexing trick to your original rows
-df_year["Download"] = [
-    make_dynamic_download_link(idx, row["link"]) for idx, row in df_year.iterrows()
-]
-df_year["date_formatted"] = df_year["date"].dt.strftime("%d.%m.%Y")
-
-# Select visible columns for the clean HTML Table
-df_html = df_year[["company", "date_formatted", "Download"]].copy()
-
-# Convert to HTML without header
-table_html = df_html.to_html(index=False, header=False, escape=False)
-
-# Add CSS for full width (Your original exact style)
-full_width_html = f"""
-<style>
-table {{
-    width: 100%;
-    border-collapse: collapse;
-}}
-td {{
-    padding: 8px;
-    text-align: left;
-}}
-</style>
-{table_html}
-"""
-
-# Display in expander exactly like before
-downloads_expander = st.expander("Herunterladen")
-downloads_expander.markdown(full_width_html, unsafe_allow_html=True)
+                    if not is_ready:
+                        if st.button(
+                            "Bereitstellen",
+                            icon="📥",
+                            key=btn_key,
+                            use_container_width=True,
+                            type="secondary",
+                        ):
+                            try:
+                                with st.spinner("Lade Datei..."):
+                                    st.session_state[file_key] = download_file(file_path)
+                                st.session_state[f"ready_{idx}"] = True
+                            except Exception:
+                                st.error("Fehler beim Laden")
+                            st.rerun()
+                    else:
+                        clicked = st.download_button(
+                            label="Speichern",
+                            icon="💾",
+                            data=st.session_state[file_key],
+                            file_name=filename,
+                            mime="application/octet-stream",
+                            key=dl_key,
+                            use_container_width=True,
+                            type="primary",
+                        )
+                        if clicked:
+                            st.session_state[f"ready_{idx}"] = False
+                            del st.session_state[file_key]
+                            st.rerun()
