@@ -14,13 +14,9 @@ Diese Seite zeigt eine detaillierte Übersicht aller erfassten Bewerbungen.
 Hier kann ich **neue Bewerbungen hochladen**, vorhandene Einträge durchsuchen und monatliche Aktivitäten analysieren.
 
 **Funktionen:**
-- 📂 *Bewerbung hinzufügen:*  
-  Über den Button *„Hochladen“* kann ich neue Bewerbungen direkt eintragen.
-- 📅 *Jahresauswahl:* 
-  Wähle ein Jahr aus, um nur Bewerbungen dieses Jahres anzuzeigen.
-- 📊 *Monatliche Statistik* 
-- 📥 *Downloads:* 
-  Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
+- 📂 *Bewerbung hinzufügen:* Über den Button *„Hochladen“* kann ich neue Bewerbungen direkt eintragen.
+- 📅 *Jahresauswahl:* Wähle ein Jahr aus, um nur Bewerbungen dieses Jahres anzuzeigen.
+- 📊 *Monatliche Statistik* - 📥 *Downloads:* Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
 """)
 
 col1, buff, col2 = st.columns([0.4, 0.3, 0.14])
@@ -148,20 +144,51 @@ st.bar_chart(data=chart_data, x="Monat", y="Bewerbungen", color="Monat")
 st.divider()
 
 
-# --- Downloads Area ---
-def make_download_link(file_path):
+# --- Downloads Area (HTML Table + Pure On-Demand Fetching) ---
+
+# 1. Catch if the user just clicked one of your HTML links
+query_params = st.query_params
+if "download_idx" in query_params:
+    target_idx = int(query_params["download_idx"])
+
+    # Locate the single requested file row safely
+    matched_row = df[df.index == target_idx]
+    if not matched_row.empty:
+        file_path = matched_row["link"].values[0]
+        filename = file_path.split("/")[-1]
+
+        with st.spinner("Datei wird abgerufen..."):
+            try:
+                # ONLY downloads the file from B2 at this specific moment!
+                file_bytes = download_file(file_path)
+                b64 = base64.b64encode(file_bytes).decode()
+
+                # Automatically trigger the browser download payload and wipe the URL clean
+                st.html(f"""
+                    <a id="auto_dl" href="data:application/octet-stream;base64,{b64}" download="{filename}" style="display:none;"></a>
+                    <script>
+                        document.getElementById('auto_dl').click();
+                        window.history.replaceState({{}}, '', window.location.pathname);
+                    </script>
+                """)
+                st.query_params.clear()
+                st.rerun()
+            except Exception:
+                st.error("Fehler beim Herunterladen der Datei.")
+
+
+# 2. Render your exact original full-width table layout
+def make_dynamic_download_link(row_idx, file_path):
     if pd.isna(file_path) or not file_path:
         return "❌"
-    try:
-        file_bytes = download_file(file_path)
-        b64 = base64.b64encode(file_bytes).decode()
-        filename = file_path.split("/")[-1]
-        return f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">📥</a>'
-    except Exception:
-        return "❌"
+    # The link reloads the page with a targeted target parameter, preventing global loading lag
+    return f'<a href="?download_idx={row_idx}" target="_self">📥</a>'
 
 
-df_year["Download"] = df_year["link"].apply(make_download_link)
+# Apply the dynamic indexing trick to your original rows
+df_year["Download"] = [
+    make_dynamic_download_link(idx, row["link"]) for idx, row in df_year.iterrows()
+]
 df_year["date_formatted"] = df_year["date"].dt.strftime("%d.%m.%Y")
 
 # Select visible columns for the clean HTML Table
@@ -170,7 +197,7 @@ df_html = df_year[["company", "date_formatted", "Download"]].copy()
 # Convert to HTML without header
 table_html = df_html.to_html(index=False, header=False, escape=False)
 
-# Add CSS for full width
+# Add CSS for full width (Your original exact style)
 full_width_html = f"""
 <style>
 table {{
@@ -185,6 +212,6 @@ td {{
 {table_html}
 """
 
-# Display in expander
+# Display in expander exactly like before
 downloads_expander = st.expander("Herunterladen")
 downloads_expander.markdown(full_width_html, unsafe_allow_html=True)
