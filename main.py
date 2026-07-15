@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import time
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -12,6 +13,7 @@ LOGIN_BACKGROUND = dir_path / "files" / "login_background.png"
 LOGO_IMAGE = dir_path / "files" / "logo.png"
 
 PASSWORD = os.getenv("PASSWORD")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 
 # --- Info Popup ---
@@ -67,9 +69,17 @@ def login():
         password_input = st.text_input("Passwort", type="password", key="pw_input")
 
         if st.button("App starten", use_container_width=True):
-            if password_input == PASSWORD:
+            if password_input == ADMIN_PASSWORD:
                 st.session_state.logged_in = True
+                st.session_state.is_admin = True
+                st.success("✅ Passwort korrekt! Willkommen, Admin!")
+                time.sleep(1)
+                st.rerun()
+            elif password_input == PASSWORD:
+                st.session_state.logged_in = True
+                st.session_state.is_admin = False
                 st.success("✅ Passwort korrekt! Willkommen!")
+                time.sleep(1)
 
                 # Note that the pop-up should be opened during the next run.
                 if not st.session_state.info_shown:
