@@ -11,6 +11,7 @@ ACTIVITIES_FILE = "activities/activity.json"
 # ---------- Form Renderer ----------
 def show_activity_form():
     """Render the Streamlit job application form and handle saving."""
+    is_admin = st.session_state.get("is_admin", False)
 
     # Checkbox outside form → updates immediately
     has_end_date = st.checkbox("Enddatum hinzufügen?")
@@ -24,7 +25,12 @@ def show_activity_form():
         if has_end_date:
             end_date = st.date_input("Enddatum")
 
-        submitted = st.form_submit_button("💾 Speichern")
+        submitted = st.form_submit_button(
+            "💾 Speichern", use_container_width=True, disabled=not is_admin
+        )
+        if not is_admin:
+            st.info("🔒 Nur der Entwickler kann Aktivitäten hinzufügen.")
+            return
 
     # ---- CSS for full-width submit button ----
     st.markdown(
@@ -38,7 +44,7 @@ def show_activity_form():
         }
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     # ---- Handle form submission ----

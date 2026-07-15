@@ -9,6 +9,7 @@ APPLICATIONS_FILE = "applications/applications.json"
 
 def show_application_form(edit_data=None):
     is_edit = edit_data is not None
+    is_admin = st.session_state.get("is_admin", False)
 
     # Pre-process data for the form
     with st.form("application_form"):
@@ -55,7 +56,14 @@ def show_application_form(edit_data=None):
         uploaded_file = st.file_uploader(
             "📎 Neue PDF hochladen (optional)", type=["pdf"]
         )
-        submitted = st.form_submit_button("💾 Speichern", use_container_width=True)
+
+        submitted = st.form_submit_button(
+            "💾 Speichern", use_container_width=True, disabled=not is_admin
+        )
+        if not is_admin:
+            st.info(
+                "🔒 Nur der Entwickler kann Bewerbungen hinzufügen oder bearbeiten."
+            )
 
     if submitted:
         if not company:
