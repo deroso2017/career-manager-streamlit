@@ -1,86 +1,96 @@
+import streamlit as st
 import time
 import datetime
-import streamlit as st
-from dataclasses import asdict
-from models.application_model import Application
+import pandas as pd
 from storage import upload_file, load_json, save_json
 
 APPLICATIONS_FILE = "applications/applications.json"
 
 
-# ---------- Form Renderer ----------
-def show_application_form():
-    """Render the Streamlit job application form and handle saving."""
+def show_application_form(edit_data=None):
+    is_edit = edit_data is not None
 
-    with st.form("application_form", clear_on_submit=True):
-        company = st.text_input("Firma")
-        date = st.date_input("Datum", datetime.date.today())
-        status = st.selectbox("Status", ["Übermittelt", "Abgesagt"], index=0)
+    # Pre-process data for the form
+    with st.form("application_form"):
+        company = st.text_input(
+            "Firma", value=edit_data.get("company", "") if is_edit else ""
+        )
+
+        # Handle date parsing
+        default_date = (
+            pd.to_datetime(edit_data["date"]).date()
+            if is_edit
+            else datetime.date.today()
+        )
+        date = st.date_input("Datum", value=default_date)
+
+        status = st.selectbox(
+            "Status",
+            ["Übermittelt", "Abgesagt"],
+            index=(
+                ["Übermittelt", "Abgesagt"].index(
+                    edit_data.get("status", "Übermittelt")
+                )
+                if is_edit
+                else 0
+            ),
+        )
+
+        platforms = [
+            "LinkedIn",
+            "Arbeitsagentur",
+            "Join",
+            "Instaffo",
+            "Stepstone",
+            "Initiative",
+        ]
         platform = st.selectbox(
             "Platform",
-            [
-                "LinkedIn",
-                "Arbeitsagentur",
-                "Join",
-                "Instaffo",
-                "Stepstone",
-                "Initiative",
-            ],
-            index=1,
+            platforms,
+            index=(
+                platforms.index(edit_data.get("platform", "LinkedIn")) if is_edit else 0
+            ),
         )
-        uploaded_file = st.file_uploader("📎 Bewerbungen hochladen (PDF)", type=["pdf"])
-        submitted = st.form_submit_button("💾 Speichern")
 
-    st.markdown(
-        """
-    <style>
-    /* Target the specific submit button container by key part */
-    .st-key-FormSubmitter-application_form----Speichern {
-        width: 100% !important;
-    }
-
-    .st-key-FormSubmitter-application_form----Speichern button {
-        width: 100%;      
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
+        uploaded_file = st.file_uploader(
+            "📎 Neue PDF hochladen (optional)", type=["pdf"]
+        )
+        submitted = st.form_submit_button("💾 Speichern", use_container_width=True)
 
     if submitted:
-        if not company or not uploaded_file:
-            st.error("Bitte Firma eingeben und eine PDF-Datei hochladen.")
+        if not company:
+            st.error("Bitte Firma eingeben.")
             return
 
-        pdf_path = f"applications/{uploaded_file.name}"
+        # Maintain existing link if no new file is provided
+        pdf_path = edit_data.get("link", "") if is_edit else ""
+        if uploaded_file:
+            pdf_path = f"applications/{uploaded_file.name}"
+            upload_file(uploaded_file.getvalue(), pdf_path)
 
-        upload_file(uploaded_file.getvalue(), pdf_path)
+        new_entry = {
+            "company": company,
+            "date": date.isoformat(),
+            "status": status,
+            "platform": platform,
+            "link": pdf_path,
+        }
 
-        # Create Application object
-        app_entry = Application(
-            company=company,
-            date=date.isoformat(),
-            status=status,
-            platform=platform,
-            link=pdf_path,
-        )
-
-        # Read or initialize JSON data
         data = load_json(APPLICATIONS_FILE)
 
-        # Update existing entry if same company exists
-        updated = False
-        for i, existing in enumerate(data):
-            if existing["company"].lower() == company.lower():
-                data[i] = asdict(app_entry)
-                updated = True
-                break
-
-        if not updated:
-            data.append(asdict(app_entry))
+        if is_edit:
+            # Match by original company and date (as they define the record)
+            for i, item in enumerate(data):
+                if (
+                    item["company"] == edit_data["company"]
+                    and item["date"] == edit_data["date"]
+                ):
+                    data[i] = new_entry
+                    break
+        else:
+            data.append(new_entry)
 
         save_json(APPLICATIONS_FILE, data)
-
-        st.success(f"Bewerbung für **{company}** wurde gespeichert!")
-        time.sleep(1)
+        st.success("Erfolgreich gespeichert!")
+        time.sleep(1)  # Optional: brief pause to ensure data is saved before rerun
         st.rerun()

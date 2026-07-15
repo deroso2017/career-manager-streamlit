@@ -6,7 +6,7 @@ from storage import load_json, download_file
 
 require_login()
 
-# Reset download states on fresh page navigation
+# Reset download states
 if not st.session_state.get("_on_apps_page"):
     for key in list(st.session_state.keys()):
         if key.startswith("ready_") or key.startswith("file_"):
@@ -25,39 +25,76 @@ Hier kann ich **neue Bewerbungen hochladen**, vorhandene Einträge durchsuchen u
 - 📊 *Monatliche Statistik* - 📥 *Downloads:* Im unteren Bereich kann ich Bewerbungsdokumente direkt herunterladen.
 """)
 
+
+# --- Modals ---
+@st.dialog("📂 Bewerbung")
+def open_form(data=None):
+    show_application_form(edit_data=data)
+
+
+# --- UI Layout ---
 col1, buff, col2 = st.columns([0.4, 0.3, 0.14])
 with col1:
     st.title("Bewerbungen")
 with col2:
-
-    @st.dialog("📂 Bewerbung")
-    def add():
-        show_application_form()
-
     st.write("")
     st.write("")
     if st.button("Hochladen"):
-        add()
+        open_form()
 
-# --- Load data safely ---
+# --- Load and Prepare Data ---
 applications = load_json("applications/applications.json")
 if not applications:
     st.warning("⚠️ Keine Bewerbungsdaten gefunden.")
     st.stop()
 
-# Convert to DataFrame
 df = pd.DataFrame(applications)
-
-# --- Ensure 'date' column exists ---
-if "date" not in df.columns:
-    st.error("❌ Spalte 'date' fehlt in der JSON-Datei.")
-    st.stop()
-
-# --- Prepare columns ---
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
-df["month_num"] = df["date"].dt.month
+df["year"] = df["date"].dt.year.astype("Int64").astype(str)
 
-# Add year and month
+years = sorted(df["year"].dropna().unique(), reverse=True)
+selected_year = st.selectbox("Jahr", years)
+
+df_year = (
+    df[df["year"] == selected_year]
+    .sort_values(by="date", ascending=False)
+    .reset_index(drop=True)
+)
+
+# --- Display: Pandas Table ---
+st.subheader(f"📅 Bewerbungen im Jahr {selected_year}")
+
+df_display = df_year.copy()
+df_display["date_str"] = df_display["date"].dt.strftime("%d.%m.%Y")
+st.dataframe(
+    df_display[["company", "date_str", "status", "platform"]].rename(
+        columns={
+            "company": "Firma",
+            "date_str": "Datum",
+            "status": "Status",
+            "platform": "Plattform",
+        }
+    ),
+    use_container_width=True,
+    hide_index=True,
+)
+
+# --- Edit Logic (via Selection) ---
+with st.expander("✏️ Eintrag bearbeiten"):
+    options = {
+        f"{row['company']} ({row['date'].strftime('%d.%m.%Y')})": i
+        for i, row in df_year.iterrows()
+    }
+    selection = st.selectbox("Wähle eine Bewerbung zur Bearbeitung:", options.keys())
+    if st.button("Auswahl öffnen"):
+        idx = options[selection]
+        row_dict = df_year.iloc[idx].to_dict()
+        row_dict["date"] = df_year.iloc[idx]["date"].strftime("%Y-%m-%d")
+        open_form(data=row_dict)
+
+st.divider()
+
+# --- Bar Chart (Original Style) ---
 months_de = [
     "Januar",
     "Februar",
@@ -72,152 +109,60 @@ months_de = [
     "November",
     "Dezember",
 ]
-df["year"] = df["date"].dt.year.astype("Int64").astype(str)
-df["month"] = df["date"].dt.month.apply(
-    lambda m: months_de[m - 1] if pd.notna(m) and 1 <= m <= 12 else None
-)
-
-# --- Select year ---
-years = sorted(df["year"].dropna().unique(), reverse=True)
-selected_year = st.selectbox("Jahr", years)
-
-# --- Filter and Sort (Chronological: Newest to Oldest) ---
-df_year = df[df["year"] == selected_year].copy()
-df_year = df_year.sort_values(by="date", ascending=False)
-
-# --- Group data for Chart ---
 monthly_counts = (
-    df_year.groupby("month_num")
-    .size()
-    .reindex(range(1, 13), fill_value=0)  # alle Monate in korrekter Reihenfolge
+    df_year.groupby(df_year["date"].dt.month).size().reindex(range(1, 13), fill_value=0)
 )
 monthly_counts_nonzero = monthly_counts[monthly_counts > 0]
-
-# Map month numbers back to German names for the chart labels
-if len(monthly_counts_nonzero) > 0:
-    monthly_counts_nonzero.index = [
-        months_de[m - 1] for m in monthly_counts_nonzero.index
-    ]
-
-# --- Show Data Table ---
-st.subheader(f"📅 Bewerbungen im Jahr {selected_year}")
-
-# Copy for formatting so we don't break datetime sorting
-df_display = df_year.copy()
-df_display["date_str"] = df_display["date"].dt.strftime("%d.%m.%Y")
-
-st.dataframe(
-    df_display[["company", "date_str", "status", "platform"]]
-    .rename(
-        columns={
-            "company": "Firma",
-            "date_str": "Datum",
-            "status": "Status",
-            "platform": "Plattform",
-        }
-    )
-    .reset_index(drop=True)
-    .rename_axis(None)
-    .rename(lambda x: x + 1)
+chart_data = pd.DataFrame(
+    {
+        "Monat": [months_de[m - 1] for m in monthly_counts_nonzero.index],
+        "Bewerbungen": monthly_counts_nonzero.values,
+    }
 )
-
-# --- Show bar chart (with multi-color months) ---
-if len(monthly_counts_nonzero) > 0:
-    if isinstance(monthly_counts_nonzero.index[0], str):
-        month_names = list(monthly_counts_nonzero.index)
-    else:
-        month_names = [months_de[int(m) - 1] for m in monthly_counts_nonzero.index]
-    month_values = monthly_counts_nonzero.values
-else:
-    month_names = []
-    month_values = []
-
-# Build DataFrame for chart
-chart_data = pd.DataFrame({"Monat": month_names, "Bewerbungen": month_values})
-
-# Keep months in correct calendar order (Jan–Dez)
 chart_data["Monat"] = pd.Categorical(
     chart_data["Monat"], categories=months_de, ordered=True
 )
 chart_data = chart_data.sort_values("Monat")
 
 st.subheader(f"📊 Bewerbungen pro Monat ({selected_year})")
-
-# Hier nutzen wir color="Monat" für unterschiedliche Farben pro Balken
 st.bar_chart(data=chart_data, x="Monat", y="Bewerbungen", color="Monat")
-
 
 st.divider()
 
-
-# --- Downloads Area (Modernized UI) ---
+# --- Downloads ---
 downloads_expander = st.expander("📥 Dokumente Herunterladen")
-
 with downloads_expander:
-    # Filter out empty paths
-    df_downloads = df_year[df_year["link"].notna() & (df_year["link"] != "")].copy()
-
+    df_downloads = df_year[df_year["link"].notna() & (df_year["link"] != "")]
     if df_downloads.empty:
         st.info("Keine Dokumente für dieses Jahr verfügbar.")
     else:
-        # Subtle, modern header context (optional, since card layouts are self-explanatory)
-        st.markdown(
-            "<small style='color: gray;'>Verfügbare Dokumente für den Download:</small>",
-            unsafe_allow_html=True,
-        )
-
         for idx, row in df_downloads.iterrows():
-            # Container with borders creates a clean card UI for each document row
             with st.container(border=True):
-                # Native vertical alignment keeps elements perfectly centered
-                col_date, col_company, col_btn = st.columns(
+                c_date, c_comp, c_btn = st.columns(
                     [0.2, 0.5, 0.3], vertical_alignment="center"
                 )
+                c_date.caption(f"🗓️ {row['date'].strftime('%d.%m.%Y')}")
+                c_comp.markdown(f"**{row['company']}**")
 
-                with col_date:
-                    # Sleek, muted date token appearance
-                    st.caption(f"🗓️ {row['date'].strftime('%d.%m.%Y')}")
-
-                with col_company:
-                    # Clean bold typography
-                    st.markdown(f"**{row['company']}**")
-
-                with col_btn:
-                    file_path = row["link"]
-                    filename = file_path.split("/")[-1]
-
-                    btn_key = f"btn_{idx}"
-                    dl_key = f"dl_{idx}"
-                    file_key = f"file_{idx}"
-                    is_ready = st.session_state.get(f"ready_{idx}", False)
-
-                    if not is_ready:
-                        if st.button(
-                            "Bereitstellen",
-                            icon="📥",
-                            key=btn_key,
-                            use_container_width=True,
-                            type="secondary",
-                        ):
-                            try:
-                                with st.spinner("Lade Datei..."):
-                                    st.session_state[file_key] = download_file(file_path)
-                                st.session_state[f"ready_{idx}"] = True
-                            except Exception:
-                                st.error("Fehler beim Laden")
-                            st.rerun()
-                    else:
-                        clicked = st.download_button(
-                            label="Speichern",
-                            icon="💾",
-                            data=st.session_state[file_key],
-                            file_name=filename,
-                            mime="application/octet-stream",
-                            key=dl_key,
-                            use_container_width=True,
-                            type="primary",
-                        )
-                        if clicked:
-                            st.session_state[f"ready_{idx}"] = False
-                            del st.session_state[file_key]
-                            st.rerun()
+                file_key = f"file_{idx}"
+                if not st.session_state.get(f"ready_{idx}"):
+                    if c_btn.button(
+                        "Bereitstellen",
+                        icon="📥",
+                        key=f"btn_{idx}",
+                        use_container_width=True,
+                    ):
+                        st.session_state[file_key] = download_file(row["link"])
+                        st.session_state[f"ready_{idx}"] = True
+                        st.rerun()
+                else:
+                    if c_btn.download_button(
+                        "Speichern",
+                        icon="💾",
+                        data=st.session_state[file_key],
+                        file_name=row["link"].split("/")[-1],
+                        key=f"dl_{idx}",
+                        use_container_width=True,
+                    ):
+                        st.session_state[f"ready_{idx}"] = False
+                        st.rerun()
