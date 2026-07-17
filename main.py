@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 import streamlit as st
 from dotenv import load_dotenv
+from components.email import show_email_button
 
 load_dotenv()
 
@@ -195,6 +196,11 @@ def run() -> None:
                     icon=":material/browse_activity:",
                 ),
                 st.Page(
+                    dir_path / "pages" / "appointments.py",
+                    title="Kalender",
+                    icon=":material/calendar_today:",
+                ),
+                st.Page(
                     dir_path / "pages" / "about_me.py",
                     title="Über mich",
                     icon=":material/contact_page:",
@@ -208,6 +214,8 @@ def run() -> None:
         st.session_state.pop("_on_apps_page", None)
 
     page.run()
+
+    show_email_button()
 
 
 if __name__ == "__main__":
