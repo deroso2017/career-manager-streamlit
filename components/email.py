@@ -15,7 +15,7 @@ def show_email_button():
         <style>
             #email-btn {{ 
                 position: fixed; 
-                bottom: 24px; 
+                bottom: 64px; 
                 right: 24px; 
                 width: 52px; 
                 height: 52px; 
